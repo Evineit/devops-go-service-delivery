@@ -1,39 +1,41 @@
 package store
 
-import "strconv"
-
 type User struct {
-	Email string
-	Id    string
-	Name  string
+	Email string `json:"email"`
+	Id    int    `json:"id"`
+	Name  string `json:"name"`
 }
 
-var database = map[string]User{
-	"1": {
+var database = []User{
+	{
 		Email: "user1@example.com",
-		Id:    "1",
+		Id:    1,
 		Name:  "User One",
 	},
-	"2": {
+	{
 		Email: "user2@example.com",
-		Id:    "2",
+		Id:    2,
 		Name:  "User Two",
 	},
 }
 
-func GetUserById(clientId string) (User, bool) {
-	user, ok := database[clientId]
-	return user, ok
+func GetUserById(clientId int) (User, bool) {
+	for _, user := range database {
+		if user.Id == clientId {
+			return user, true
+		}
+	}
+	return User{}, false
 }
 
-func UpdateUserById(clientId string, updatedUser User) bool {
-	_, ok := database[clientId]
-	if !ok {
-		return false
+func UpdateUserById(clientId int, updatedUser User) bool {
+	for i, user := range database {
+		if user.Id == clientId {
+			database[i] = updatedUser
+			return true
+		}
 	}
-	database[clientId] = updatedUser
-	return true
-
+	return false
 }
 
 func GetAllUsers() []User {
@@ -44,9 +46,11 @@ func GetAllUsers() []User {
 	return users
 }
 
-func CreateUser(newUser User) {
+func CreateUser(newUser User) User {
 	// Incremental ID generation (for simplicity)
 	newId := len(database) + 1
-	newUser.Id = strconv.Itoa(newId)
-	database[newUser.Id] = newUser
+	newUser.Id = newId
+	database = append(database, newUser)
+
+	return newUser
 }

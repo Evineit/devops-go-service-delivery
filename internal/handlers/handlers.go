@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"user-service/internal/store"
 )
@@ -46,32 +47,33 @@ func createUserProfile(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Missing required fields", http.StatusBadRequest)
 		return
 	}
-	store.CreateUser(newProfile)
+	newProfile = store.CreateUser(newProfile)
 	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(newProfile)
 }
 
 func GetUser(w http.ResponseWriter, r *http.Request) {
 	var clientId = r.URL.Query().Get("clientId")
-	clientProfile, ok := store.GetUserById(clientId)
-	if !ok {
-		http.Error(w, "Client profile not found", http.StatusNotFound)
+	clientIdInt, err := strconv.Atoi(clientId)
+	if err != nil {
+		http.Error(w, "Invalid client ID", http.StatusBadRequest)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 
-	response := store.User{
-		Email: clientProfile.Email,
-		Id:    clientProfile.Id,
-		Name:  clientProfile.Name,
+	user, found := store.GetUserById(clientIdInt)
+	if !found {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
 	}
-	json.NewEncoder(w).Encode(response)
+	json.NewEncoder(w).Encode(user)
 }
 
 func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	var clientId = r.URL.Query().Get("clientId")
-	clientProfile, ok := store.GetUserById(clientId)
-	if !ok {
-		http.Error(w, "User profile not found", http.StatusNotFound)
+	clientIdInt, err := strconv.Atoi(clientId)
+	if err != nil {
+		http.Error(w, "Invalid client ID", http.StatusBadRequest)
 		return
 	}
 
@@ -83,14 +85,12 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	// Update the user profile with the new data
-	if payloadData.Email != "" {
-		clientProfile.Email = payloadData.Email
+	// Update the user in the database
+	updated := store.UpdateUserById(clientIdInt, payloadData)
+	if !updated {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
 	}
-	if payloadData.Name != "" {
-		clientProfile.Name = payloadData.Name
-	}
-	store.UpdateUserById(clientId, clientProfile)
 
 	w.WriteHeader(http.StatusOK)
 }

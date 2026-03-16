@@ -13,10 +13,7 @@ func main() {
 	http.HandleFunc("/", homeHandler)
 	http.HandleFunc("/user/profile", handlers.HandleUser)
 	http.HandleFunc("/users", handlers.HandleUsers)
-	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
-	})
+	http.HandleFunc("/health", handlers.HandleHealth)
 
 	// Read the port from environment variable or default to 8080
 	port := os.Getenv("PORT")

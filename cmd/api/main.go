@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
 	"user-service/internal/handlers"
 )
@@ -15,8 +16,14 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
 	})
-	log.Println("Server is running on http://localhost:8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+
+	// Read the port from environment variable or default to 8080
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	log.Println("Server is running on http://localhost:" + port)
+	log.Fatal(http.ListenAndServe(":" + port, nil))
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {

@@ -1,12 +1,14 @@
 package tests
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
 	"user-service/internal/handlers"
+	"user-service/internal/store"
 )
 
 func TestHandleUser(t *testing.T) {
@@ -40,15 +42,20 @@ func TestHandleUser(t *testing.T) {
 	if resp.StatusCode != http.StatusCreated {
 		t.Errorf("Expected status 201 Created for valid payload, got %d", resp.StatusCode)
 	}
+	// Check response body for new user
+	var newUser store.User
+	if json.NewDecoder(resp.Body).Decode(&newUser) != nil {
+		t.Errorf("Failed to decode response body for new user")
+	}
 
-	// Test POST /users endpoint with invalid payload
-	req = httptest.NewRequest(http.MethodPost, "/users", strings.NewReader(`{"name": "John Doe", "test": "invalid-email"}`))
+	// Test POST /users endpoint with malformed JSON
+	req = httptest.NewRequest(http.MethodPost, "/users", strings.NewReader(`{"name": "John Doe", "email": "`))
 	req.Header.Set("Content-Type", "application/json")
 	w = httptest.NewRecorder()
 	handlers.HandleUsers(w, req)
 	resp = w.Result()
 	if resp.StatusCode != http.StatusBadRequest {
-		t.Errorf("Expected status 400 Bad Request for invalid payload, got %d", resp.StatusCode)
+		t.Errorf("Expected status 400 Bad Request for malformed JSON, got %d", resp.StatusCode)
 	}
 
 	// Test POST /users with missing required fields

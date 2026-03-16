@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"user-service/internal/handlers"
+	"user-service/internal/middleware"
 )
 
 func main() {
@@ -23,7 +24,8 @@ func main() {
 		port = "8080"
 	}
 	log.Println("Server is running on http://localhost:" + port)
-	log.Fatal(http.ListenAndServe(":" + port, nil))
+	// Wrap the default mux with the logging middleware
+	log.Fatal(http.ListenAndServe(":"+port, middleware.LogRequest(http.DefaultServeMux)))
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {

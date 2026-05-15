@@ -304,3 +304,48 @@ This is the "done means done" version.
 ### Troubleshooting
 
 - [ ] documented at least 5 break/fix cases
+
+## Quick Start
+
+Run locally:
+
+```bash
+go run ./cmd/api
+# server on http://localhost:8080
+```
+
+Build binary:
+
+```bash
+make build
+```
+
+Run with Docker (multi-stage build included):
+
+```bash
+make docker-build
+docker run -p 8080:8080 myrepo/devops-go-service-delivery:local
+```
+
+Endpoints:
+
+- `GET /health` -> {"status":"ok"}
+- `GET /users` -> list users
+- `POST /users` -> create user (JSON body: name, email)
+- `GET /metrics` -> {"requests": <count>}
+
+Kubernetes (raw manifests):
+
+```bash
+kubectl apply -f k8s/deployment.yaml -f k8s/service.yaml
+```
+
+Helm (render templates):
+
+```bash
+helm template ./chart --values ./chart/values.yaml
+```
+
+CI:
+
+This repo includes a GitHub Actions workflow at `.github/workflows/ci.yml` that runs `go fmt`, `go test`, builds the binary, and builds a Docker image.

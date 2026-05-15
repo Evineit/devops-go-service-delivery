@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/go-build
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+      - name: Install deps
+        run: go mod download
+      - name: Run go fmt
+        run: go fmt ./...
+      - name: Run tests
+        run: go test ./...
+      - name: Build binary
+        run: go build -v ./cmd/api
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ github.repository }}:ci-${{ github.run_id }} .

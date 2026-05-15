@@ -3,6 +3,8 @@ package middleware
 import (
 	"log/slog"
 	"net/http"
+
+	"user-service/internal/metrics"
 )
 
 type statusRecorder struct {
@@ -30,6 +32,9 @@ func LogRequest(next http.Handler) http.Handler {
 			method   = r.Method
 			path     = r.URL.Path
 		)
+
+		// increment request counter for metrics
+		metrics.IncRequests()
 
 		recorder := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
 		next.ServeHTTP(recorder, r)

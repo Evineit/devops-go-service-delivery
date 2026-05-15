@@ -14,6 +14,7 @@ func main() {
 	http.HandleFunc("/user/profile", handlers.HandleUser)
 	http.HandleFunc("/users", handlers.HandleUsers)
 	http.HandleFunc("/health", handlers.HandleHealth)
+	http.HandleFunc("/metrics", handlers.HandleMetrics)
 
 	// Read the port from environment variable or default to 8080
 	port := os.Getenv("PORT")

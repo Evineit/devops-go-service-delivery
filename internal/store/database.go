@@ -1,5 +1,7 @@
 package store
 
+import "sync/atomic"
+
 type User struct {
 	Email string `json:"email"`
 	Id    int    `json:"id"`
@@ -19,6 +21,18 @@ var database = []User{
 	},
 }
 
+var idCounter int32
+
+func init() {
+	var max int
+	for _, u := range database {
+		if u.Id > max {
+			max = u.Id
+		}
+	}
+	atomic.StoreInt32(&idCounter, int32(max))
+}
+
 func GetUserById(clientId int) (User, bool) {
 	for _, user := range database {
 		if user.Id == clientId {
@@ -31,6 +45,7 @@ func GetUserById(clientId int) (User, bool) {
 func UpdateUserById(clientId int, updatedUser User) bool {
 	for i, user := range database {
 		if user.Id == clientId {
+			updatedUser.Id = clientId
 			database[i] = updatedUser
 			return true
 		}
@@ -47,8 +62,8 @@ func GetAllUsers() []User {
 }
 
 func CreateUser(newUser User) User {
-	// Incremental ID generation (for simplicity)
-	newId := len(database) + 1
+	// Concurrency-safe incremental ID generation
+	newId := int(atomic.AddInt32(&idCounter, 1))
 	newUser.Id = newId
 	database = append(database, newUser)
 

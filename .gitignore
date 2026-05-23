@@ -1,2 +1,6 @@
 user-service.exe
 notes/*
+*.exe
+bin/
+rendered.yaml
+kubeconfig_devops.yaml

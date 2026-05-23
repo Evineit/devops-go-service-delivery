@@ -261,49 +261,49 @@ This is the "done means done" version.
 
 ### Application
 
-- [ ] GET /health works
-- [ ] GET /users works
-- [ ] POST /users works
-- [ ] invalid JSON returns 400
-- [ ] missing fields return 400
-- [ ] requests are logged
-- [ ] port is configurable via env var
+- [x] GET /health works
+- [x] GET /users works
+- [x] POST /users works
+- [x] invalid JSON returns 400
+- [x] missing fields return 400
+- [x] requests are logged
+- [x] port is configurable via env var
 
 ### Go learning
 
-- [ ] used structs
-- [ ] used package separation
-- [ ] used JSON encode/decode
-- [ ] used env config
-- [ ] wrote unit tests
-- [ ] built compiled binary
+- [x] used structs
+- [x] used package separation
+- [x] used JSON encode/decode
+- [x] used env config
+- [x] wrote unit tests
+- [x] built compiled binary
 
 ### Container
 
-- [ ] Dockerfile works
-- [ ] app runs in container
-- [ ] multi-stage build used
+- [x] Dockerfile works
+- [x] app runs in container
+- [x] multi-stage build used
 
 ### Kubernetes
 
-- [ ] deployment works on kind/k3d
-- [ ] service exposes app
-- [ ] liveness probe works
-- [ ] readiness probe works
+- [x] deployment works on kind/k3d
+- [x] service exposes app
+- [x] liveness probe works
+- [x] readiness probe works
 
 ### Helm
 
-- [ ] app deploys with Helm
-- [ ] values can override image tag and replica count
+- [x] app deploys with Helm
+- [x] values can override image tag and replica count
 
 ### CI
 
-- [ ] run tests automatically
-- [ ] run image build automatically
+- [x] run tests automatically
+- [x] run image build automatically
 
 ### Troubleshooting
 
-- [ ] documented at least 5 break/fix cases
+- [x] documented at least 5 break/fix cases
 
 ## Quick Start
 

@@ -12,91 +12,153 @@ import (
 	"user-service/internal/store"
 )
 
-func TestHandleUser(t *testing.T) {
-	// Test GET /health endpoint
+func TestHealthEndpoint(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)
 	w := httptest.NewRecorder()
 	handlers.HandleHealth(w, req)
 	resp := w.Result()
+
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("Expected status 200 OK, got %d", resp.StatusCode)
 	}
-	// Validate JSON body
-	var healthBody map[string]string
-	if json.NewDecoder(resp.Body).Decode(&healthBody) != nil {
-		t.Errorf("Failed to decode JSON body for /health")
-	}
-	if healthBody["status"] != "ok" {
-		t.Errorf("Expected health.status = 'ok', got %v", healthBody["status"])
-	}
 
-	// Test GET /users endpoint
-	req = httptest.NewRequest(http.MethodGet, "/users", nil)
-	w = httptest.NewRecorder()
+	var body map[string]string
+	if json.NewDecoder(resp.Body).Decode(&body) != nil {
+		t.Fatal("Failed to decode JSON body for /health")
+	}
+	if body["status"] != "ok" {
+		t.Errorf("Expected health.status = 'ok', got %v", body["status"])
+	}
+}
+
+func TestListUsers(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/users", nil)
+	w := httptest.NewRecorder()
 	handlers.HandleUsers(w, req)
+	resp := w.Result()
 
-	resp = w.Result()
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("Expected status 200 OK, got %d", resp.StatusCode)
 	}
 
-	// Test POST /users endpoint with valid payload
+	var users []store.User
+	if err := json.NewDecoder(resp.Body).Decode(&users); err != nil {
+		t.Fatal("Failed to decode users list")
+	}
+	if len(users) == 0 {
+		t.Error("Expected at least one user")
+	}
+}
+
+func TestCreateUser(t *testing.T) {
 	payload := `{"name": "John Doe", "email": "john.doe@example.com"}`
-	req = httptest.NewRequest(http.MethodPost, "/users", strings.NewReader(payload))
+	req := httptest.NewRequest(http.MethodPost, "/users", strings.NewReader(payload))
 	req.Header.Set("Content-Type", "application/json")
-	w = httptest.NewRecorder()
+	w := httptest.NewRecorder()
 	handlers.HandleUsers(w, req)
-	resp = w.Result()
-	// It should return 201 Created for valid payload
+	resp := w.Result()
+
 	if resp.StatusCode != http.StatusCreated {
-		t.Errorf("Expected status 201 Created for valid payload, got %d", resp.StatusCode)
-	}
-	// Check response body for new user
-	var newUser store.User
-	if json.NewDecoder(resp.Body).Decode(&newUser) != nil {
-		t.Errorf("Failed to decode response body for new user")
+		t.Errorf("Expected status 201 Created, got %d", resp.StatusCode)
 	}
 
-	// Test POST /users endpoint with malformed JSON
-	req = httptest.NewRequest(http.MethodPost, "/users", strings.NewReader(`{"name": "John Doe", "email": "`))
+	var user store.User
+	if err := json.NewDecoder(resp.Body).Decode(&user); err != nil {
+		t.Fatal("Failed to decode created user")
+	}
+	if user.Name != "John Doe" || user.Email != "john.doe@example.com" {
+		t.Errorf("Created user data mismatch: %+v", user)
+	}
+	if user.Id == 0 {
+		t.Error("Expected non-zero user ID")
+	}
+}
+
+func TestCreateUserMalformedJSON(t *testing.T) {
+	req := httptest.NewRequest(http.MethodPost, "/users", strings.NewReader(`{"name": "John Doe", "email": "`))
 	req.Header.Set("Content-Type", "application/json")
-	w = httptest.NewRecorder()
+	w := httptest.NewRecorder()
 	handlers.HandleUsers(w, req)
-	resp = w.Result()
+	resp := w.Result()
+
 	if resp.StatusCode != http.StatusBadRequest {
-		t.Errorf("Expected status 400 Bad Request for malformed JSON, got %d", resp.StatusCode)
+		t.Errorf("Expected status 400 Bad Request, got %d", resp.StatusCode)
 	}
+}
 
-	// Test POST /users with missing required fields
-	req = httptest.NewRequest(http.MethodPost, "/users", strings.NewReader(`{"name": "John Doe"}`))
+func TestCreateUserMissingFields(t *testing.T) {
+	req := httptest.NewRequest(http.MethodPost, "/users", strings.NewReader(`{"name": "John Doe"}`))
 	req.Header.Set("Content-Type", "application/json")
-	w = httptest.NewRecorder()
+	w := httptest.NewRecorder()
 	handlers.HandleUsers(w, req)
-	resp = w.Result()
+	resp := w.Result()
+
 	if resp.StatusCode != http.StatusBadRequest {
 		t.Errorf("Expected status 400 Bad Request for missing fields, got %d", resp.StatusCode)
 	}
+}
 
-	// Test metrics: ensure middleware increments counter
-	// Call a handler wrapped with logging middleware
-	w = httptest.NewRecorder()
-	req = httptest.NewRequest(http.MethodGet, "/health", nil)
+func TestGetUserProfile(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/user/profile?clientId=1", nil)
+	w := httptest.NewRecorder()
+	handlers.HandleUser(w, req)
+	resp := w.Result()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200 OK, got %d", resp.StatusCode)
+	}
+
+	var user store.User
+	if err := json.NewDecoder(resp.Body).Decode(&user); err != nil {
+		t.Fatal("Failed to decode user profile")
+	}
+	if user.Id != 1 {
+		t.Errorf("Expected user ID 1, got %d", user.Id)
+	}
+}
+
+func TestGetUserProfileNotFound(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/user/profile?clientId=999", nil)
+	w := httptest.NewRecorder()
+	handlers.HandleUser(w, req)
+	resp := w.Result()
+
+	if resp.StatusCode != http.StatusNotFound {
+		t.Errorf("Expected status 404 Not Found, got %d", resp.StatusCode)
+	}
+}
+
+func TestGetUserProfileInvalidID(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/user/profile?clientId=abc", nil)
+	w := httptest.NewRecorder()
+	handlers.HandleUser(w, req)
+	resp := w.Result()
+
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("Expected status 400 Bad Request, got %d", resp.StatusCode)
+	}
+}
+
+func TestMetrics(t *testing.T) {
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/health", nil)
 	handler := middleware.LogRequest(http.HandlerFunc(handlers.HandleHealth))
 	handler.ServeHTTP(w, req)
 
-	// Now call /metrics to read the counter
 	w = httptest.NewRecorder()
 	req = httptest.NewRequest(http.MethodGet, "/metrics", nil)
 	handlers.HandleMetrics(w, req)
-	resp = w.Result()
+	resp := w.Result()
+
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("Expected status 200 OK for /metrics, got %d", resp.StatusCode)
 	}
-	var metricsBody map[string]int64
-	if json.NewDecoder(resp.Body).Decode(&metricsBody) != nil {
-		t.Errorf("Failed to decode JSON body for /metrics")
+
+	var body map[string]int64
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		t.Fatal("Failed to decode JSON body for /metrics")
 	}
-	if metricsBody["requests"] < 1 {
-		t.Errorf("Expected requests >= 1, got %d", metricsBody["requests"])
+	if body["requests"] < 1 {
+		t.Errorf("Expected requests >= 1, got %d", body["requests"])
 	}
 }

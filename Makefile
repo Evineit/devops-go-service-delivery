@@ -1,7 +1,7 @@
 .PHONY: run build test fmt docker-build helm-template k8s-apply
 
 APP_NAME := user-service
-IMAGE := myrepo/$(APP_NAME):local
+IMAGE := myrepo/devops-go-service-delivery:latest
 
 run:
 	go run ./cmd/api

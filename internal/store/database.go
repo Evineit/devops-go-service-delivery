@@ -1,6 +1,9 @@
 package store
 
-import "sync/atomic"
+import (
+	"sync"
+	"sync/atomic"
+)
 
 type User struct {
 	Email string `json:"email"`
@@ -8,18 +11,14 @@ type User struct {
 	Name  string `json:"name"`
 }
 
-var database = []User{
-	{
-		Email: "user1@example.com",
-		Id:    1,
-		Name:  "User One",
-	},
-	{
-		Email: "user2@example.com",
-		Id:    2,
-		Name:  "User Two",
-	},
-}
+var (
+	mu sync.RWMutex
+
+	database = []User{
+		{Email: "user1@example.com", Id: 1, Name: "User One"},
+		{Email: "user2@example.com", Id: 2, Name: "User Two"},
+	}
+)
 
 var idCounter int32
 
@@ -34,6 +33,8 @@ func init() {
 }
 
 func GetUserById(clientId int) (User, bool) {
+	mu.RLock()
+	defer mu.RUnlock()
 	for _, user := range database {
 		if user.Id == clientId {
 			return user, true
@@ -43,6 +44,8 @@ func GetUserById(clientId int) (User, bool) {
 }
 
 func UpdateUserById(clientId int, updatedUser User) bool {
+	mu.Lock()
+	defer mu.Unlock()
 	for i, user := range database {
 		if user.Id == clientId {
 			updatedUser.Id = clientId
@@ -54,6 +57,8 @@ func UpdateUserById(clientId int, updatedUser User) bool {
 }
 
 func GetAllUsers() []User {
+	mu.RLock()
+	defer mu.RUnlock()
 	var users []User
 	for _, user := range database {
 		users = append(users, user)
@@ -62,7 +67,8 @@ func GetAllUsers() []User {
 }
 
 func CreateUser(newUser User) User {
-	// Concurrency-safe incremental ID generation
+	mu.Lock()
+	defer mu.Unlock()
 	newId := int(atomic.AddInt32(&idCounter, 1))
 	newUser.Id = newId
 	database = append(database, newUser)

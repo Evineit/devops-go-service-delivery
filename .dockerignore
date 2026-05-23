@@ -1,0 +1,11 @@
+.git
+*.exe
+bin/
+notes/
+kubeconfig_devops.yaml
+rendered.yaml
+tests/
+README.md
+.gitignore
+.gitattributes
+Makefile

@@ -139,6 +139,46 @@ func TestGetUserProfileInvalidID(t *testing.T) {
 	}
 }
 
+func TestUpdateUserProfile(t *testing.T) {
+	payload := `{"name": "Updated Name", "email": "updated@example.com"}`
+	req := httptest.NewRequest(http.MethodPatch, "/user/profile?clientId=1", strings.NewReader(payload))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	handlers.HandleUser(w, req)
+	resp := w.Result()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected status 200 OK, got %d", resp.StatusCode)
+	}
+
+	var user store.User
+	if err := json.NewDecoder(resp.Body).Decode(&user); err != nil {
+		t.Fatal("Failed to decode updated user")
+	}
+	if user.Id != 1 {
+		t.Errorf("Expected user ID 1, got %d", user.Id)
+	}
+	if user.Name != "Updated Name" {
+		t.Errorf("Expected name 'Updated Name', got %s", user.Name)
+	}
+	if user.Email != "updated@example.com" {
+		t.Errorf("Expected email 'updated@example.com', got %s", user.Email)
+	}
+}
+
+func TestUpdateUserProfileNotFound(t *testing.T) {
+	payload := `{"name": "Nope", "email": "nope@example.com"}`
+	req := httptest.NewRequest(http.MethodPatch, "/user/profile?clientId=999", strings.NewReader(payload))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	handlers.HandleUser(w, req)
+	resp := w.Result()
+
+	if resp.StatusCode != http.StatusNotFound {
+		t.Errorf("Expected status 404 Not Found, got %d", resp.StatusCode)
+	}
+}
+
 func TestMetrics(t *testing.T) {
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/health", nil)

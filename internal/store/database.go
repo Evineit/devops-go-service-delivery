@@ -43,17 +43,17 @@ func GetUserById(clientId int) (User, bool) {
 	return User{}, false
 }
 
-func UpdateUserById(clientId int, updatedUser User) bool {
+func UpdateUserById(clientId int, updatedUser User) (User, bool) {
 	mu.Lock()
 	defer mu.Unlock()
 	for i, user := range database {
 		if user.Id == clientId {
 			updatedUser.Id = clientId
 			database[i] = updatedUser
-			return true
+			return database[i], true
 		}
 	}
-	return false
+	return User{}, false
 }
 
 func GetAllUsers() []User {

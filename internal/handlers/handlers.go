@@ -98,12 +98,12 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	// Update the user in the database
-	updated := store.UpdateUserById(clientIdInt, payloadData)
-	if !updated {
+	updatedUser, found := store.UpdateUserById(clientIdInt, payloadData)
+	if !found {
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(updatedUser)
 }
